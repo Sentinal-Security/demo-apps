@@ -112,36 +112,70 @@ export default function DummyApp2() {
           </button>
         </div>
       ) : (
-        <form onSubmit={handleLogin}>
-          <h2 style={{ fontSize: "18px", marginBottom: "12px" }}>Sign In via Central IAM Gateway</h2>
-          <div style={{ marginBottom: "12px" }}>
-            <label style={{ display: "block", fontSize: "14px", marginBottom: "4px" }}>Email:</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #d1d5db", boxSizing: "border-box" }}
-            />
+        <div>
+          <div style={{ marginBottom: "20px", padding: "16px", borderRadius: "8px", backgroundColor: "#fdf2f8", border: "1px solid #fbcfe8", textAlign: "center" }}>
+            <h2 style={{ fontSize: "16px", fontWeight: "700", color: "#831843", margin: "0 0 6px 0" }}>Enterprise Single Sign-On</h2>
+            <p style={{ fontSize: "13px", color: "#9d174d", margin: "0 0 16px 0" }}>
+              Authenticate centrally via Sentinel Security with multi-factor authenticator verification.
+            </p>
+            <a
+              href={`http://localhost:3000/login?client_id=fintech_payroll&redirect_uri=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "http://localhost:3002")}&app_name=FinTech%20Payroll%20Portal`}
+              style={{
+                display: "block",
+                width: "100%",
+                padding: "12px",
+                backgroundColor: "#030712",
+                color: "#54f4fc",
+                border: "1px solid #54f4fc",
+                borderRadius: "6px",
+                textDecoration: "none",
+                fontWeight: "700",
+                fontSize: "13px",
+                letterSpacing: "0.5px",
+                boxSizing: "border-box"
+              }}
+            >
+              Sign In with Sentinel Security
+            </a>
           </div>
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", fontSize: "14px", marginBottom: "4px" }}>Password:</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #d1d5db", boxSizing: "border-box" }}
-            />
+
+          <div style={{ display: "flex", alignItems: "center", margin: "18px 0" }}>
+            <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }}></div>
+            <span style={{ margin: "0 10px", fontSize: "11px", fontWeight: "600", color: "#94a3b8" }}>OR DIRECT CREDENTIALS</span>
+            <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }}></div>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: "100%", padding: "10px", backgroundColor: "#db2777", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
-          >
-            {loading ? "Authenticating..." : "Login to FinTech Payroll Portal"}
-          </button>
-        </form>
+
+          <form onSubmit={handleLogin}>
+            <h2 style={{ fontSize: "16px", marginBottom: "12px", color: "#334155" }}>Direct API Sign In</h2>
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ display: "block", fontSize: "14px", marginBottom: "4px" }}>Email:</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #d1d5db", boxSizing: "border-box" }}
+              />
+            </div>
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ display: "block", fontSize: "14px", marginBottom: "4px" }}>Password:</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #d1d5db", boxSizing: "border-box" }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ width: "100%", padding: "10px", backgroundColor: "#db2777", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
+            >
+              {loading ? "Authenticating..." : "Login to FinTech Payroll Portal"}
+            </button>
+          </form>
+        </div>
       )}
 
       <footer style={{ marginTop: "24px", paddingTop: "12px", borderTop: "1px solid #e5e7eb", fontSize: "12px", color: "#9ca3af", textAlign: "center" }}>
