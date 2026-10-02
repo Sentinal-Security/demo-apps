@@ -11,17 +11,32 @@ export default function DummyApp1() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // Check shared local storage SSO session
-    const savedUserId = localStorage.getItem("sentinel_sso_userId");
-    if (savedUserId) {
-      validateSsoSession(Number(savedUserId)).then((res) => {
-        if (res.success) {
-          setUser(res);
-          setMessage("Single Sign-On (SSO) Session Active.");
-        } else {
+    // Check URL query parameters for SSO handoff first
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryUserId = urlParams.get("ssoUserId") || urlParams.get("userId");
+
+    const targetUserId = queryUserId || localStorage.getItem("sentinel_sso_userId");
+
+    if (targetUserId) {
+      setLoading(true);
+      validateSsoSession(Number(targetUserId))
+        .then((res) => {
+          setLoading(false);
+          if (res.success) {
+            setUser(res);
+            localStorage.setItem("sentinel_sso_userId", String(targetUserId));
+            setMessage("Single Sign-On (SSO) Session Active.");
+            if (queryUserId) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          } else {
+            localStorage.removeItem("sentinel_sso_userId");
+          }
+        })
+        .catch(() => {
+          setLoading(false);
           localStorage.removeItem("sentinel_sso_userId");
-        }
-      });
+        });
     }
   }, []);
 
@@ -53,9 +68,30 @@ export default function DummyApp1() {
 
   return (
     <div style={{ maxWidth: "600px", margin: "40px auto", padding: "24px", background: "#ffffff", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-      <header style={{ borderBottom: "2px solid #2563eb", paddingBottom: "12px", marginBottom: "20px" }}>
-        <h1 style={{ margin: 0, color: "#2563eb", fontSize: "24px" }}>🏢 Acme HR Portal (Dummy App 1)</h1>
-        <p style={{ margin: "4px 0 0 0", color: "#6b7280", fontSize: "14px" }}>Running on Port 3001 | Central IAM Gateway SSO Client</p>
+      <header style={{ borderBottom: "2px solid #2563eb", paddingBottom: "14px", marginBottom: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", flexWrap: "wrap" }}>
+          <div>
+            <h1 style={{ margin: 0, color: "#2563eb", fontSize: "24px", fontWeight: "700" }}>Acme HR Portal (Demo App 1)</h1>
+            <p style={{ margin: "4px 0 0 0", color: "#6b7280", fontSize: "14px" }}>Running on Port 3001 | Central IAM Gateway SSO Client</p>
+          </div>
+          <a
+            href="http://localhost:3000/dashboard"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              fontSize: "12px",
+              fontWeight: "600",
+              color: "#2563eb",
+              textDecoration: "none",
+              backgroundColor: "#eff6ff",
+              border: "1px solid #bfdbfe",
+              padding: "6px 12px",
+              borderRadius: "6px"
+            }}
+          >
+            Return to Sentinel Portal
+          </a>
+        </div>
       </header>
 
       {message && (
@@ -103,7 +139,7 @@ export default function DummyApp1() {
             disabled={loading}
             style={{ width: "100%", padding: "10px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
           >
-            {loading ? "Authenticating..." : "Login to Dummy App 1"}
+            {loading ? "Authenticating..." : "Login to Acme HR Portal"}
           </button>
         </form>
       )}
