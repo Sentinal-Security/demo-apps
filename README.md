@@ -16,7 +16,13 @@ This repository contains **3 distinct client web applications** configured for S
 
 ## Quick Start (Run All 3 Apps)
 
-Open 3 terminal windows and start each client application:
+You can launch all 3 demo applications concurrently using the included script:
+
+```bash
+./run-dummy-apps.sh
+```
+
+Or open 3 terminal windows and start each client application individually:
 
 ```bash
 # Terminal 1: Run Dummy App 1 (Port 3001)
