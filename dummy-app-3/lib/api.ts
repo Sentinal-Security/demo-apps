@@ -6,6 +6,9 @@ export interface AuthResponse {
   userId?: number;
   email?: string;
   fullName?: string;
+  role?: string;
+  company?: string;
+  ssoToken?: string;
   mfaEnabled?: boolean;
   mfaRequired?: boolean;
 }

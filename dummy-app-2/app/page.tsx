@@ -46,6 +46,13 @@ export default function DummyApp2() {
     setMessage("");
     try {
       const res = await loginToCentralApi({ email, password });
+      if (res.success && res.mfaRequired) {
+        setMessage("Multi-Factor Authentication required. Redirecting to Sentinel Security Gateway...");
+        setTimeout(() => {
+          window.location.href = `http://localhost:3000/login?client_id=fintech_payroll&redirect_uri=${encodeURIComponent(window.location.origin)}&app_name=FinTech%20Payroll%20Portal`;
+        }, 1200);
+        return;
+      }
       if (res.success && res.userId) {
         setUser(res);
         localStorage.setItem("sentinel_sso_userId", String(res.userId));
@@ -106,6 +113,8 @@ export default function DummyApp2() {
           <p><strong>User ID:</strong> {user.userId}</p>
           <p><strong>Email:</strong> {user.email}</p>
           <p><strong>Full Name:</strong> {user.fullName || "N/A"}</p>
+          <p><strong>Role:</strong> {user.role || "USER"}</p>
+          {user.company && <p><strong>Organization:</strong> {user.company}</p>}
           <p><strong>MFA Enabled:</strong> {user.mfaEnabled ? "Yes" : "No"}</p>
           <button onClick={handleLogout} style={{ padding: "10px 16px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
             Logout (End SSO Session)
