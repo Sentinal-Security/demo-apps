@@ -67,6 +67,11 @@ export default function DummyApp2() {
     }
   };
 
+  // FinTech Payroll role-based state
+  const [payrollDisbursed, setPayrollDisbursed] = useState(false);
+  const [disbursementTx, setDisbursementTx] = useState<string | null>(null);
+  const [paystubDownloaded, setPaystubDownloaded] = useState(false);
+
   const handleLogout = () => {
     localStorage.removeItem("sentinel_sso_userId");
     setUser(null);
@@ -116,6 +121,109 @@ export default function DummyApp2() {
           <p><strong>Role:</strong> {user.role || "USER"}</p>
           {user.company && <p><strong>Organization:</strong> {user.company}</p>}
           <p><strong>MFA Enabled:</strong> {user.mfaEnabled ? "Yes" : "No"}</p>
+
+          {/* Role-Specific Feature Module */}
+          <div style={{ marginTop: "16px", marginBottom: "16px", padding: "14px", borderRadius: "8px", border: "1px solid #fbcfe8", backgroundColor: "#fdf2f8" }}>
+            {user.role === "FINANCE" || user.role === "ADMIN" ? (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", color: "#9d174d", fontWeight: "700" }}>Corporate Payroll Disbursement Terminal</h3>
+                  <span style={{ fontSize: "11px", fontWeight: "700", padding: "2px 8px", borderRadius: "4px", backgroundColor: "#fce7f3", color: "#9d174d" }}>
+                    ROLE: {user.role} (PRIVILEGED)
+                  </span>
+                </div>
+                <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 12px 0" }}>
+                  As an authorized Finance Officer, you have signing authority to execute ACH transfers and disburse corporate salary batches.
+                </p>
+
+                {payrollDisbursed && (
+                  <div style={{ padding: "8px 12px", marginBottom: "12px", borderRadius: "4px", backgroundColor: "#dcfce7", color: "#166534", fontSize: "12px", fontWeight: "600" }}>
+                    ✓ [FINANCE AUDIT] Batch {disbursementTx} successfully disbursed by {user.fullName || user.email} at {new Date().toLocaleTimeString()}.
+                  </div>
+                )}
+
+                <div style={{ padding: "12px", borderRadius: "6px", backgroundColor: "#ffffff", border: "1px solid #f472b6", marginBottom: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                    <span style={{ color: "#64748b" }}>Disbursement Cycle:</span>
+                    <strong style={{ color: "#0f172a" }}>Bi-Weekly Cycle Q4-B</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                    <span style={{ color: "#64748b" }}>Pending Salary Total:</span>
+                    <strong style={{ color: "#db2777", fontSize: "15px" }}>$148,250.00 (24 Staff)</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+                    <span style={{ color: "#64748b" }}>Clearing Gateway:</span>
+                    <span style={{ color: "#334155" }}>Sentinel Federal Clearing House (#ACH-021)</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const tx = "ACH-TX-0x" + Math.random().toString(16).substring(2, 10).toUpperCase();
+                    setPayrollDisbursed(true);
+                    setDisbursementTx(tx);
+                  }}
+                  disabled={payrollDisbursed}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: payrollDisbursed ? "#94a3b8" : "#db2777",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    cursor: payrollDisbursed ? "default" : "pointer"
+                  }}
+                >
+                  {payrollDisbursed ? "Payroll Batch Disbursed ✓" : "Authorize & Disburse Payroll Batch"}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", color: "#831843", fontWeight: "700" }}>Employee Compensation & Paystub</h3>
+                  <span style={{ fontSize: "11px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", backgroundColor: "#fce7f3", color: "#831843" }}>
+                    ROLE: {user.role || "USER"} (STANDARD)
+                  </span>
+                </div>
+                <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 10px 0" }}>
+                  Confidential compensation summary. Corporate disbursement controls require the FINANCE or ADMIN role.
+                </p>
+
+                <div style={{ padding: "10px", borderRadius: "6px", backgroundColor: "#ffffff", border: "1px solid #e2e8f0", marginBottom: "10px", fontSize: "12px", color: "#334155" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span>Monthly Gross Salary:</span>
+                    <strong>$6,500.00</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", color: "#dc2626" }}>
+                    <span>Taxes & Benefit Deductions:</span>
+                    <span>-$1,350.00</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #f1f5f9", paddingTop: "4px", fontWeight: "700", color: "#16a34a" }}>
+                    <span>Estimated Net Direct Deposit:</span>
+                    <span>$5,150.00</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setPaystubDownloaded(true)}
+                  style={{
+                    padding: "6px 12px",
+                    backgroundColor: "#0284c7",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  {paystubDownloaded ? "Paystub Generated ✓" : "Download Verified Paystub (CSV)"}
+                </button>
+              </div>
+            )}
+          </div>
+
           <button onClick={handleLogout} style={{ padding: "10px 16px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
             Logout (End SSO Session)
           </button>

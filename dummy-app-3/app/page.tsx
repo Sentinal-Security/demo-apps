@@ -67,6 +67,11 @@ export default function DummyApp3() {
     }
   };
 
+  // DevOps Incident role-based state
+  const [clusterQuarantined, setClusterQuarantined] = useState(false);
+  const [hotfixDeployed, setHotfixDeployed] = useState(false);
+  const [devopsAuditLog, setDevopsAuditLog] = useState("");
+
   const handleLogout = () => {
     localStorage.removeItem("sentinel_sso_userId");
     setUser(null);
@@ -116,6 +121,112 @@ export default function DummyApp3() {
           <p><strong>Role:</strong> {user.role || "USER"}</p>
           {user.company && <p><strong>Organization:</strong> {user.company}</p>}
           <p><strong>MFA Enabled:</strong> {user.mfaEnabled ? "Yes" : "No"}</p>
+
+          {/* Role-Specific Feature Module */}
+          <div style={{ marginTop: "16px", marginBottom: "16px", padding: "14px", borderRadius: "8px", border: "1px solid #a7f3d0", backgroundColor: "#f0fdf4" }}>
+            {user.role === "DEVOPS" || user.role === "ADMIN" ? (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", color: "#065f46", fontWeight: "700" }}>Incident Command & Production Safeguard Terminal</h3>
+                  <span style={{ fontSize: "11px", fontWeight: "700", padding: "2px 8px", borderRadius: "4px", backgroundColor: "#d1fae5", color: "#065f46" }}>
+                    ROLE: {user.role} (PRIVILEGED)
+                  </span>
+                </div>
+                <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 12px 0" }}>
+                  As an authorized DevOps Incident Commander, you hold emergency access to production node routing, cluster quarantining, and hotfix rollouts.
+                </p>
+
+                {devopsAuditLog && (
+                  <div style={{ padding: "8px 12px", marginBottom: "12px", borderRadius: "4px", backgroundColor: "#dcfce7", color: "#166534", fontSize: "12px", fontWeight: "600" }}>
+                    ✓ {devopsAuditLog}
+                  </div>
+                )}
+
+                <div style={{ padding: "12px", borderRadius: "6px", backgroundColor: "#ffffff", border: "1px solid #6ee7b7", marginBottom: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                    <span style={{ color: "#64748b" }}>Production Cluster:</span>
+                    <strong style={{ color: "#0f172a" }}>ap-southeast-2-k8s-mesh</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                    <span style={{ color: "#64748b" }}>Mesh Gateway Status:</span>
+                    <strong style={{ color: clusterQuarantined ? "#dc2626" : "#059669" }}>
+                      {clusterQuarantined ? "MAINTENANCE LOCKDOWN (Quarantined)" : "HEALTHY (Normal Traffic Ingress)"}
+                    </strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+                    <span style={{ color: "#64748b" }}>Active Microservices:</span>
+                    <span style={{ color: "#334155" }}>18 / 18 Pods Synchronized</span>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => {
+                      setHotfixDeployed(true);
+                      setDevopsAuditLog(`Hotfix patch v2.4.9 deployed by ${user.fullName || user.email} at ${new Date().toLocaleTimeString()}. 0 dropped packets.`);
+                    }}
+                    disabled={hotfixDeployed}
+                    style={{
+                      padding: "8px 14px",
+                      backgroundColor: hotfixDeployed ? "#94a3b8" : "#059669",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      fontWeight: "700",
+                      cursor: hotfixDeployed ? "default" : "pointer"
+                    }}
+                  >
+                    {hotfixDeployed ? "Hotfix Deployed ✓" : "Deploy Emergency Hotfix"}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const nextState = !clusterQuarantined;
+                      setClusterQuarantined(nextState);
+                      setDevopsAuditLog(`Cluster lockdown ${nextState ? "ENGAGED" : "LIFTED"} by ${user.fullName || user.email} at ${new Date().toLocaleTimeString()}`);
+                    }}
+                    style={{
+                      padding: "8px 14px",
+                      backgroundColor: clusterQuarantined ? "#16a34a" : "#dc2626",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      fontWeight: "700",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {clusterQuarantined ? "Lift Cluster Lockdown" : "Toggle Emergency Lockdown"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", color: "#14532d", fontWeight: "700" }}>System Health & SLA Status</h3>
+                  <span style={{ fontSize: "11px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", backgroundColor: "#d1fae5", color: "#14532d" }}>
+                    ROLE: {user.role || "USER"} (STANDARD)
+                  </span>
+                </div>
+                <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 10px 0" }}>
+                  Read-only operational status. Production cluster remediation actions require the DEVOPS or ADMIN role.
+                </p>
+
+                <div style={{ padding: "10px", borderRadius: "6px", backgroundColor: "#ffffff", border: "1px solid #e2e8f0", fontSize: "12px", color: "#334155" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span>Cluster Uptime (30 Days):</span>
+                    <strong style={{ color: "#059669" }}>99.98% Operational</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Active Incident Tickets:</span>
+                    <span>0 Critical Outages / 0 Warnings</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           <button onClick={handleLogout} style={{ padding: "10px 16px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
             Logout (End SSO Session)
           </button>

@@ -67,6 +67,13 @@ export default function DummyApp1() {
     }
   };
 
+  // Acme HR role-based state
+  const [clockedIn, setClockedIn] = useState(false);
+  const [lastClockTime, setLastClockTime] = useState<string | null>(null);
+  const [hrLeaveApproved, setHrLeaveApproved] = useState(false);
+  const [hrPromotionApproved, setHrPromotionApproved] = useState(false);
+  const [hrAuditLog, setHrAuditLog] = useState("");
+
   const handleLogout = () => {
     localStorage.removeItem("sentinel_sso_userId");
     setUser(null);
@@ -116,6 +123,121 @@ export default function DummyApp1() {
           <p><strong>Role:</strong> {user.role || "USER"}</p>
           {user.company && <p><strong>Organization:</strong> {user.company}</p>}
           <p><strong>MFA Enabled:</strong> {user.mfaEnabled ? "Yes" : "No"}</p>
+
+          {/* Role-Specific Feature Module */}
+          <div style={{ marginTop: "16px", marginBottom: "16px", padding: "14px", borderRadius: "8px", border: "1px solid #bfdbfe", backgroundColor: "#f8fafc" }}>
+            {user.role === "HR" || user.role === "ADMIN" ? (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", color: "#1e40af", fontWeight: "700" }}>HR Governance & Staff Moderation Terminal</h3>
+                  <span style={{ fontSize: "11px", fontWeight: "700", padding: "2px 8px", borderRadius: "4px", backgroundColor: "#dbeafe", color: "#1e40af" }}>
+                    ROLE: {user.role} (PRIVILEGED)
+                  </span>
+                </div>
+                <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 12px 0" }}>
+                  As an authorized HR Officer / Moderator, you hold discretionary authority over employee onboarding, department leave, and rank adjustments.
+                </p>
+
+                {hrAuditLog && (
+                  <div style={{ padding: "8px 12px", marginBottom: "12px", borderRadius: "4px", backgroundColor: "#dcfce7", color: "#166534", fontSize: "12px", fontWeight: "600" }}>
+                    ✓ {hrAuditLog}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ padding: "10px", borderRadius: "6px", backgroundColor: "#ffffff", border: "1px solid #cbd5e1", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontWeight: "600", fontSize: "13px", color: "#0f172a" }}>Alex Turner (Staff Engineer)</div>
+                      <div style={{ fontSize: "12px", color: "#64748b" }}>Application: Promotion to Senior Staff Lead</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setHrPromotionApproved(true);
+                        setHrAuditLog(`Promotion for Alex Turner approved by ${user.fullName || user.email} at ${new Date().toLocaleTimeString()}`);
+                      }}
+                      disabled={hrPromotionApproved}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: hrPromotionApproved ? "#94a3b8" : "#2563eb",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        cursor: hrPromotionApproved ? "default" : "pointer"
+                      }}
+                    >
+                      {hrPromotionApproved ? "Approved ✓" : "Approve Promotion"}
+                    </button>
+                  </div>
+
+                  <div style={{ padding: "10px", borderRadius: "6px", backgroundColor: "#ffffff", border: "1px solid #cbd5e1", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontWeight: "600", fontSize: "13px", color: "#0f172a" }}>Elena Rostova (UX Researcher)</div>
+                      <div style={{ fontSize: "12px", color: "#64748b" }}>Application: 3-Day Annual Leave Request (Oct 16 - 19)</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setHrLeaveApproved(true);
+                        setHrAuditLog(`Leave request for Elena Rostova approved by ${user.fullName || user.email} at ${new Date().toLocaleTimeString()}`);
+                      }}
+                      disabled={hrLeaveApproved}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: hrLeaveApproved ? "#94a3b8" : "#16a34a",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        cursor: hrLeaveApproved ? "default" : "pointer"
+                      }}
+                    >
+                      {hrLeaveApproved ? "Approved ✓" : "Approve Leave"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", color: "#0f172a", fontWeight: "700" }}>Employee Attendance & Self-Service</h3>
+                  <span style={{ fontSize: "11px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", backgroundColor: "#e2e8f0", color: "#475569" }}>
+                    ROLE: {user.role || "USER"} (STANDARD)
+                  </span>
+                </div>
+                <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 10px 0" }}>
+                  Record your attendance punch timestamp. Manager moderation actions require the HR or ADMIN role.
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <button
+                    onClick={() => {
+                      const now = new Date().toLocaleTimeString();
+                      setClockedIn(!clockedIn);
+                      setLastClockTime(now);
+                    }}
+                    style={{
+                      padding: "8px 14px",
+                      backgroundColor: clockedIn ? "#ea580c" : "#0284c7",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {clockedIn ? "Clock Out (Take Break)" : "Clock In (Start Shift)"}
+                  </button>
+                  <span style={{ fontSize: "12px", color: "#334155" }}>
+                    Status: <strong>{clockedIn ? "On Duty (Clocked In)" : "Off Duty"}</strong>
+                    {lastClockTime && ` | Last punch: ${lastClockTime}`}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           <button onClick={handleLogout} style={{ padding: "10px 16px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
             Logout (End SSO Session)
           </button>
