@@ -1,8 +1,8 @@
 import React from "react";
 
 export const metadata = {
-  title: "FinTech Payroll Portal (Dummy App 2)",
-  description: "SSO Client Application 2",
+  title: "FinTech Global | Payroll & Treasury",
+  description: "Enterprise Financial Disbursals & Compliance",
 };
 
 export default function RootLayout({

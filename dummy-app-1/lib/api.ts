@@ -7,7 +7,7 @@ export function getSentinelPortalUrl(): string {
   if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
     return "http://localhost:3000";
   }
-  return "https://web-kuvn.onrender.com";
+  return "https://web-beta-orcin-33.vercel.app";
 }
 
 export interface AuthResponse {

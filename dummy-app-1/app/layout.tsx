@@ -1,8 +1,8 @@
 import React from "react";
 
 export const metadata = {
-  title: "Acme HR Portal (Dummy App 1)",
-  description: "SSO Client Application 1",
+  title: "Acme Corp | Global HR Portal",
+  description: "Workforce Operations & Employee Governance",
 };
 
 export default function RootLayout({

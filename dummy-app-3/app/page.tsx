@@ -9,7 +9,7 @@ export default function DummyApp3() {
   const [user, setUser] = useState<AuthResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [portalUrl, setPortalUrl] = useState("https://web-kuvn.onrender.com");
+  const [portalUrl, setPortalUrl] = useState("https://web-beta-orcin-33.vercel.app");
 
   useEffect(() => {
     setPortalUrl(getSentinelPortalUrl());
@@ -101,10 +101,13 @@ export default function DummyApp3() {
             <p style={{ margin: "4px 0 0 0", color: "#64748b", fontSize: "13px" }}>Site Reliability &amp; Infrastructure Monitoring</p>
           </div>
           <a
-            href={`${portalUrl}/dashboard`}
+            href={user ? `${portalUrl}/dashboard` : portalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: "inline-flex",
               alignItems: "center",
+              gap: "6px",
               fontSize: "12px",
               fontWeight: "600",
               color: "#065f46",
@@ -115,7 +118,10 @@ export default function DummyApp3() {
               borderRadius: "6px"
             }}
           >
-            Sentinel Identity Console
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            <span>{user ? "Manage IAM Profile" : "Sentinel IAM Portal"}</span>
           </a>
         </div>
       </header>
@@ -236,9 +242,9 @@ export default function DummyApp3() {
       ) : (
         <div>
           <div style={{ marginBottom: "20px", padding: "16px", borderRadius: "8px", backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0", textAlign: "center" }}>
-            <h2 style={{ fontSize: "15px", fontWeight: "700", color: "#065f46", margin: "0 0 6px 0" }}>Enterprise Single Sign-On</h2>
+            <h2 style={{ fontSize: "15px", fontWeight: "700", color: "#065f46", margin: "0 0 6px 0" }}>Enterprise Single Sign-On (SSO)</h2>
             <p style={{ fontSize: "13px", color: "#047857", margin: "0 0 16px 0" }}>
-              Authenticate centrally via Sentinel Security with multi-factor verification.
+              Sign in with your organization email via Sentinel Security with multi-factor verification.
             </p>
             <a
               href={`${portalUrl}/login?client_id=devops_incident&redirect_uri=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "")}&app_name=DevOps%20Incident%20Center`}
@@ -263,7 +269,7 @@ export default function DummyApp3() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
-              <span>Sign in with Sentinel Enterprise SSO</span>
+              <span>Sign in with Enterprise SSO</span>
             </a>
           </div>
 

@@ -1,8 +1,8 @@
 import React from "react";
 
 export const metadata = {
-  title: "DevOps Incident Portal (Dummy App 3)",
-  description: "SSO Client Application 3",
+  title: "Nexus Ops | Incident Command Center",
+  description: "Infrastructure Reliability & Incident Response",
 };
 
 export default function RootLayout({
