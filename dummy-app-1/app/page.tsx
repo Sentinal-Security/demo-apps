@@ -17,27 +17,35 @@ export default function DummyApp1() {
     // Check URL query parameters for SSO handoff first
     const urlParams = new URLSearchParams(window.location.search);
     const queryUserId = urlParams.get("ssoUserId") || urlParams.get("userId");
+    const queryToken = urlParams.get("ssoToken");
+
     const targetUserId = queryUserId || localStorage.getItem("sentinel_sso_userId");
+    const targetToken = queryToken || localStorage.getItem("sentinel_sso_token") || undefined;
 
     if (targetUserId) {
       setLoading(true);
-      validateSsoSession(Number(targetUserId))
+      validateSsoSession(Number(targetUserId), targetToken)
         .then((res) => {
           setLoading(false);
           if (res.success) {
             setUser(res);
             localStorage.setItem("sentinel_sso_userId", String(targetUserId));
+            if (targetToken) {
+              localStorage.setItem("sentinel_sso_token", targetToken);
+            }
             setMessage("Single Sign-On (SSO) Session Active.");
-            if (queryUserId) {
+            if (queryUserId || queryToken) {
               window.history.replaceState({}, document.title, window.location.pathname);
             }
           } else {
             localStorage.removeItem("sentinel_sso_userId");
+            localStorage.removeItem("sentinel_sso_token");
           }
         })
         .catch(() => {
           setLoading(false);
           localStorage.removeItem("sentinel_sso_userId");
+          localStorage.removeItem("sentinel_sso_token");
         });
     }
   }, []);
@@ -58,6 +66,9 @@ export default function DummyApp1() {
       if (res.success && res.userId) {
         setUser(res);
         localStorage.setItem("sentinel_sso_userId", String(res.userId));
+        if (res.ssoToken) {
+          localStorage.setItem("sentinel_sso_token", res.ssoToken);
+        }
         setMessage("Login successful. SSO session established across enterprise applications.");
       } else {
         setMessage(res.message || "Login failed.");
@@ -78,6 +89,7 @@ export default function DummyApp1() {
 
   const handleLogout = () => {
     localStorage.removeItem("sentinel_sso_userId");
+    localStorage.removeItem("sentinel_sso_token");
     setUser(null);
     setMessage("Logged out from Acme HR Portal.");
   };

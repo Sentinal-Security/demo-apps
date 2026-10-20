@@ -32,11 +32,11 @@ export async function loginToCentralApi(data: { email: string; password: string 
   return res.json();
 }
 
-export async function validateSsoSession(userId: number): Promise<AuthResponse> {
+export async function validateSsoSession(userId: number, ssoToken?: string): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE_URL}/api/auth/validate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId }),
+    body: JSON.stringify({ userId, ssoToken }),
   });
   return res.json();
 }
