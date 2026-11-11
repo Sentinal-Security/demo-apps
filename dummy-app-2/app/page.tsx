@@ -10,9 +10,12 @@ export default function DummyApp2() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [portalUrl, setPortalUrl] = useState("https://web-beta-orcin-33.vercel.app");
+  // Client-only origin: avoids an empty redirect_uri being baked into the SSR-rendered SSO link
+  const [origin, setOrigin] = useState("");
 
   useEffect(() => {
     setPortalUrl(getSentinelPortalUrl());
+    setOrigin(window.location.origin);
 
     // Check URL query parameters for SSO handoff first
     const urlParams = new URLSearchParams(window.location.search);
@@ -239,7 +242,7 @@ export default function DummyApp2() {
               Sign in with your organization email via Sentinel Security with multi-factor verification.
             </p>
             <a
-              href={`${portalUrl}/login?client_id=fintech_payroll&redirect_uri=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "")}&app_name=FinTech%20Payroll`}
+              href={`${portalUrl}/login?client_id=fintech_payroll&redirect_uri=${encodeURIComponent(origin)}&app_name=FinTech%20Payroll`}
               style={{
                 display: "flex",
                 alignItems: "center",
