@@ -250,7 +250,7 @@ export default function DummyApp3() {
               Sign in with your organization email via Sentinel Security with multi-factor verification.
             </p>
             <a
-              href={`${portalUrl}/login?client_id=devops_incident&redirect_uri=${encodeURIComponent(origin)}&app_name=DevOps%20Incident%20Center`}
+              href={`${portalUrl}/login?client_id=devops_incident&redirect_uri=${encodeURIComponent(origin || (typeof window !== "undefined" && window.location.origin ? window.location.origin : "http://localhost:3003"))}&app_name=DevOps%20Incident%20Center`}
               style={{
                 display: "flex",
                 alignItems: "center",

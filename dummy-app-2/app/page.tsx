@@ -242,7 +242,7 @@ export default function DummyApp2() {
               Sign in with your organization email via Sentinel Security with multi-factor verification.
             </p>
             <a
-              href={`${portalUrl}/login?client_id=fintech_payroll&redirect_uri=${encodeURIComponent(origin)}&app_name=FinTech%20Payroll`}
+              href={`${portalUrl}/login?client_id=fintech_payroll&redirect_uri=${encodeURIComponent(origin || (typeof window !== "undefined" && window.location.origin ? window.location.origin : "http://localhost:3002"))}&app_name=FinTech%20Payroll`}
               style={{
                 display: "flex",
                 alignItems: "center",

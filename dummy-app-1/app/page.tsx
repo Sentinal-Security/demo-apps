@@ -273,7 +273,7 @@ export default function DummyApp1() {
               Sign in with your organization email via Sentinel Security with multi-factor verification.
             </p>
             <a
-              href={`${portalUrl}/login?client_id=acme_hr&redirect_uri=${encodeURIComponent(origin)}&app_name=Acme%20Corp%20HR`}
+              href={`${portalUrl}/login?client_id=acme_hr&redirect_uri=${encodeURIComponent(origin || (typeof window !== "undefined" && window.location.origin ? window.location.origin : "http://localhost:3001"))}&app_name=Acme%20Corp%20HR`}
               style={{
                 display: "flex",
                 alignItems: "center",
