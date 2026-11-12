@@ -10,17 +10,29 @@ export default function DummyApp1() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [portalUrl, setPortalUrl] = useState("https://web-beta-orcin-33.vercel.app");
-  // Client-only origin: avoids an empty redirect_uri being baked into the SSR-rendered SSO link
-  const [origin, setOrigin] = useState("");
+  // Client-only origin with robust fallback to avoid empty redirect_uri in SSR or initial render
+  const [origin, setOrigin] = useState("http://localhost:3001");
 
   useEffect(() => {
     setPortalUrl(getSentinelPortalUrl());
-    setOrigin(window.location.origin);
+    if (typeof window !== "undefined" && window.location.origin) {
+      setOrigin(window.location.origin);
+    }
 
     // Check URL query parameters for SSO handoff first
     const urlParams = new URLSearchParams(window.location.search);
     const queryUserId = urlParams.get("ssoUserId") || urlParams.get("userId");
     const queryToken = urlParams.get("ssoToken");
+    const mode = urlParams.get("mode");
+
+    // If explicitly routed to login mode without SSO token, clear any cached session
+    if (mode === "login" && !queryUserId && !queryToken) {
+      localStorage.removeItem("sentinel_sso_userId");
+      localStorage.removeItem("sentinel_sso_token");
+      setUser(null);
+      setMessage("");
+      return;
+    }
 
     const targetUserId = queryUserId || localStorage.getItem("sentinel_sso_userId");
     const targetToken = queryToken || localStorage.getItem("sentinel_sso_token") || undefined;
@@ -56,31 +68,12 @@ export default function DummyApp1() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
-    try {
-      const res = await loginToCentralApi({ email, password });
-      if (res.success && res.mfaRequired) {
-        setMessage("Multi-Factor Authentication required. Redirecting to Sentinel Identity Gateway...");
-        setTimeout(() => {
-          window.location.href = `${portalUrl}/login?client_id=acme_hr&redirect_uri=${encodeURIComponent(window.location.origin)}&app_name=Acme%20Corp%20HR`;
-        }, 1200);
-        return;
-      }
-      if (res.success && res.userId) {
-        setUser(res);
-        localStorage.setItem("sentinel_sso_userId", String(res.userId));
-        if (res.ssoToken) {
-          localStorage.setItem("sentinel_sso_token", res.ssoToken);
-        }
-        setMessage("Login successful. SSO session established across enterprise applications.");
-      } else {
-        setMessage(res.message || "Login failed.");
-      }
-    } catch {
-      setMessage("Error connecting to Central IAM API.");
-    } finally {
-      setLoading(false);
-    }
+    setMessage("Forwarding to Sentinel Security Identity Gateway for credential authorization...");
+    const redirectTarget = origin || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3001");
+    const targetUrl = `${portalUrl}/login?client_id=acme_hr&redirect_uri=${encodeURIComponent(redirectTarget)}&app_name=Acme%20Corp%20HR${email ? `&email=${encodeURIComponent(email)}` : ""}`;
+    setTimeout(() => {
+      window.location.href = targetUrl;
+    }, 400);
   };
 
   // Acme HR role-based state
@@ -295,7 +288,7 @@ export default function DummyApp1() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
-              <span>Sign in with Enterprise SSO</span>
+              <span>Sign in with Sentinel Security</span>
             </a>
           </div>
 
