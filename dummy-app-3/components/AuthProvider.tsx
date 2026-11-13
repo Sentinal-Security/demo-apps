@@ -129,10 +129,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSsoToken(null);
           setAuthStatus("unauthenticated");
           setIsSsoHandoff(false);
-          if (hasQuerySso || (res.message && res.message.toLowerCase().includes("access denied"))) {
+          if (
+            hasQuerySso ||
+            res.accessDenied ||
+            (res.message &&
+              (res.message.toLowerCase().includes("permission") ||
+                res.message.toLowerCase().includes("access denied")))
+          ) {
             setNotice({
               type: "error",
-              text: res.message || "Unable to verify SSO session. Please sign in again.",
+              text: res.message || "Your sign-in session couldn't be verified. Please sign in again.",
             });
           }
         }
@@ -148,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (hasQuerySso) {
           setNotice({
             type: "error",
-            text: "Sentinel Identity Gateway is unreachable. Please try again.",
+            text: "We couldn't connect to the sign-in service right now. Please try again in a moment.",
           });
         }
       });

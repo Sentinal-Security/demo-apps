@@ -22,6 +22,7 @@ export interface AuthResponse {
   ssoToken?: string;
   mfaEnabled?: boolean;
   mfaRequired?: boolean;
+  accessDenied?: boolean;
 }
 
 export async function loginToCentralApi(data: { email: string; password: string }): Promise<AuthResponse> {
@@ -50,8 +51,16 @@ export async function validateSsoSession(
     body: JSON.stringify({ userId, ssoToken, clientId, redirectUri, appName }),
   });
   try {
-    return await res.json();
+    const json = await res.json();
+    return {
+      ...json,
+      accessDenied: res.status === 403,
+    };
   } catch {
-    return { success: false, message: "Unable to validate SSO session." };
+    return {
+      success: false,
+      accessDenied: res.status === 403,
+      message: "Your sign-in session couldn't be verified. Please sign in again.",
+    };
   }
 }
