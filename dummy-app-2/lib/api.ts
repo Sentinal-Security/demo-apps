@@ -37,11 +37,17 @@ export async function loginToCentralApi(data: { email: string; password: string 
   }
 }
 
-export async function validateSsoSession(userId?: number, ssoToken?: string): Promise<AuthResponse> {
+export async function validateSsoSession(
+  userId?: number,
+  ssoToken?: string,
+  clientId?: string,
+  redirectUri?: string,
+  appName?: string
+): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE_URL}/api/auth/validate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, ssoToken }),
+    body: JSON.stringify({ userId, ssoToken, clientId, redirectUri, appName }),
   });
   try {
     return await res.json();
