@@ -1,320 +1,222 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { loginToCentralApi, validateSsoSession, getSentinelPortalUrl, AuthResponse } from "../lib/api";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../components/AuthProvider";
+import { SsoVerifyingScreen } from "../components/SsoVerifyingScreen";
 
-export default function DummyApp3() {
+export default function HomePage() {
+  const router = useRouter();
+  const { authStatus, buildSsoLoginUrl, startSsoRedirect, setNotice } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState<AuthResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [portalUrl, setPortalUrl] = useState("https://web-beta-orcin-33.vercel.app");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    setPortalUrl(getSentinelPortalUrl());
-
-    // Check URL query parameters for SSO handoff first
-    const urlParams = new URLSearchParams(window.location.search);
-    const queryUserId = urlParams.get("ssoUserId") || urlParams.get("userId");
-    const queryToken = urlParams.get("ssoToken");
-
-    const targetUserId = queryUserId || localStorage.getItem("sentinel_sso_userId");
-    const targetToken = queryToken || localStorage.getItem("sentinel_sso_token") || undefined;
-
-    if (targetUserId) {
-      setLoading(true);
-      validateSsoSession(Number(targetUserId), targetToken)
-        .then((res) => {
-          setLoading(false);
-          if (res.success) {
-            setUser(res);
-            localStorage.setItem("sentinel_sso_userId", String(targetUserId));
-            if (targetToken) {
-              localStorage.setItem("sentinel_sso_token", targetToken);
-            }
-            setMessage("Single Sign-On (SSO) Session Active.");
-            if (queryUserId || queryToken) {
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }
-          } else {
-            localStorage.removeItem("sentinel_sso_userId");
-            localStorage.removeItem("sentinel_sso_token");
-          }
-        })
-        .catch(() => {
-          setLoading(false);
-          localStorage.removeItem("sentinel_sso_userId");
-          localStorage.removeItem("sentinel_sso_token");
-        });
+    if (authStatus === "authenticated") {
+      router.replace("/dashboard");
     }
-  }, []);
+  }, [authStatus, router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  if (authStatus === "authenticated") {
+    return (
+      <SsoVerifyingScreen
+        title="Opening Incident Command..."
+        subtitle="Redirecting to your Nexus Ops dashboard..."
+      />
+    );
+  }
+
+  const handleDirectLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage("");
-    try {
-      const res = await loginToCentralApi({ email, password });
-      if (res.success && res.mfaRequired) {
-        setMessage("Multi-Factor Authentication required. Redirecting to Sentinel Identity Gateway...");
-        setTimeout(() => {
-          window.location.href = `${portalUrl}/login?client_id=devops_incident&redirect_uri=${encodeURIComponent(window.location.origin)}&app_name=DevOps%20Incident%20Center`;
-        }, 1200);
-        return;
-      }
-      if (res.success && res.userId) {
-        setUser(res);
-        localStorage.setItem("sentinel_sso_userId", String(res.userId));
-        if (res.ssoToken) {
-          localStorage.setItem("sentinel_sso_token", res.ssoToken);
-        }
-        setMessage("Login successful. SSO session established across enterprise applications.");
-      } else {
-        setMessage(res.message || "Login failed.");
-      }
-    } catch {
-      setMessage("Error connecting to Central IAM API.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // DevOps Incident role-based state
-  const [incidentMitigated, setIncidentMitigated] = useState(false);
-  const [maintenanceTriggered, setMaintenanceTriggered] = useState(false);
-  const [incidentResolved, setIncidentResolved] = useState<string | null>(null);
-
-  const handleLogout = () => {
-    localStorage.removeItem("sentinel_sso_userId");
-    localStorage.removeItem("sentinel_sso_token");
-    setUser(null);
-    setMessage("Logged out from DevOps Incident Center.");
+    setSubmitting(true);
+    setNotice({
+      type: "info",
+      text: "Forwarding to Sentinel Security Identity Gateway for credential authorization...",
+    });
+    setTimeout(() => {
+      startSsoRedirect(email);
+    }, 300);
   };
 
   return (
-    <div style={{ maxWidth: "600px", margin: "40px auto", padding: "24px", background: "#ffffff", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", fontFamily: "sans-serif" }}>
-      <header style={{ borderBottom: "2px solid #059669", paddingBottom: "14px", marginBottom: "20px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", flexWrap: "wrap" }}>
-          <div>
-            <h1 style={{ margin: 0, color: "#065f46", fontSize: "22px", fontWeight: "700" }}>Nexus Ops | Incident Command Center</h1>
-            <p style={{ margin: "4px 0 0 0", color: "#64748b", fontSize: "13px" }}>Site Reliability &amp; Infrastructure Monitoring</p>
-          </div>
-          <a
-            href={user ? `${portalUrl}/dashboard` : portalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+    <div style={{ display: "flex", flexDirection: "column", gap: "36px" }}>
+      {/* Hero + Sign-In Split */}
+      <section className="hero-grid" id="top">
+        <div style={{ paddingTop: "8px" }}>
+          <span className="badge badge-accent" style={{ marginBottom: "14px" }}>
+            Sentinel Federated SRE Command
+          </span>
+          <h1
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "12px",
-              fontWeight: "600",
-              color: "#065f46",
-              textDecoration: "none",
-              backgroundColor: "#ecfdf5",
-              border: "1px solid #a7f3d0",
-              padding: "6px 12px",
-              borderRadius: "6px"
+              fontSize: "34px",
+              lineHeight: 1.15,
+              margin: "0 0 14px",
+              color: "#0f172a",
+              fontWeight: 800,
             }}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-            <span>{user ? "Manage IAM Profile" : "Sentinel IAM Portal"}</span>
-          </a>
-        </div>
-      </header>
+            Site Reliability &amp; Infrastructure Monitoring
+          </h1>
+          <p
+            style={{
+              fontSize: "15px",
+              lineHeight: 1.65,
+              color: "var(--text-secondary)",
+              margin: "0 0 24px",
+              maxWidth: "540px",
+            }}
+          >
+            Nexus Ops Incident Command Center coordinates cluster failover commands, Kubernetes
+            HPA scaling, and live gateway telemetry behind Sentinel Zero-Trust SSO.
+          </p>
 
-      {message && (
-        <div style={{ padding: "12px", marginBottom: "16px", borderRadius: "6px", backgroundColor: "#d1fae5", color: "#065f46", fontSize: "14px" }}>
-          {message}
-        </div>
-      )}
-
-      {user ? (
-        <div>
-          <h2 style={{ color: "#16a34a", fontSize: "18px", marginTop: 0 }}>Authenticated Engineer Profile</h2>
-          <p><strong>Engineer ID:</strong> {user.userId}</p>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Full Name:</strong> {user.fullName || "N/A"}</p>
-          <p><strong>Role:</strong> {user.role || "USER"}</p>
-          {user.company && <p><strong>Cluster / Entity:</strong> {user.company}</p>}
-          <p><strong>MFA Verified:</strong> {user.mfaEnabled ? "Yes" : "No"}</p>
-
-          {/* Role-Specific Feature Module */}
-          <div style={{ marginTop: "16px", marginBottom: "16px", padding: "14px", borderRadius: "8px", border: "1px solid #a7f3d0", backgroundColor: "#f0fdf4" }}>
-            {user.role === "DEVOPS" || user.role === "ADMIN" ? (
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                  <h3 style={{ margin: 0, fontSize: "15px", color: "#065f46", fontWeight: "700" }}>Production Escalation &amp; Failover Console</h3>
-                  <span style={{ fontSize: "11px", fontWeight: "700", padding: "2px 8px", borderRadius: "4px", backgroundColor: "#d1fae5", color: "#065f46" }}>
-                    ROLE: {user.role} (SRE CLEARANCE)
-                  </span>
-                </div>
-                <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 12px 0" }}>
-                  Authorized incident remediation console. SRE engineers can execute failover drain commands and resolve outages.
-                </p>
-
-                {incidentResolved && (
-                  <div style={{ padding: "8px 12px", marginBottom: "12px", borderRadius: "4px", backgroundColor: "#dcfce7", color: "#166534", fontSize: "12px", fontWeight: "600" }}>
-                    [RESOLVED] {incidentResolved}
-                  </div>
-                )}
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <div style={{ padding: "10px", borderRadius: "6px", backgroundColor: "#ffffff", border: "1px solid #cbd5e1", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontWeight: "600", fontSize: "13px", color: "#dc2626" }}>INC-8891: Database Connection Pool Exhaustion</div>
-                      <div style={{ fontSize: "12px", color: "#64748b" }}>Cluster: ap-southeast-2 (PostgreSQL Session Gateway)</div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setIncidentMitigated(true);
-                        setIncidentResolved(`INC-8891 mitigated: Pool connections recycled by ${user.fullName || user.email} at ${new Date().toLocaleTimeString()}`);
-                      }}
-                      disabled={incidentMitigated}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: incidentMitigated ? "#94a3b8" : "#dc2626",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        cursor: incidentMitigated ? "default" : "pointer"
-                      }}
-                    >
-                      {incidentMitigated ? "Mitigated" : "Drain & Recycle Pool"}
-                    </button>
-                  </div>
-
-                  <div style={{ padding: "10px", borderRadius: "6px", backgroundColor: "#ffffff", border: "1px solid #cbd5e1", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontWeight: "600", fontSize: "13px", color: "#0f172a" }}>Kubernetes Ingress Pod Autoscaling (HPA)</div>
-                      <div style={{ fontSize: "12px", color: "#64748b" }}>Current: 14 Replicas (Load 82%)</div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setMaintenanceTriggered(true);
-                        setIncidentResolved(`HPA scaled up to 24 pods by ${user.fullName || user.email} at ${new Date().toLocaleTimeString()}`);
-                      }}
-                      disabled={maintenanceTriggered}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: maintenanceTriggered ? "#94a3b8" : "#059669",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        cursor: maintenanceTriggered ? "default" : "pointer"
-                      }}
-                    >
-                      {maintenanceTriggered ? "Scaled Up" : "Scale HPA (24 Pods)"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <h3 style={{ margin: 0, fontSize: "15px", color: "#0f172a", fontWeight: "700" }}>System Health &amp; Incident Status Board</h3>
-                  <span style={{ fontSize: "11px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", backgroundColor: "#e2e8f0", color: "#475569" }}>
-                    ROLE: {user.role || "USER"} (OBSERVER)
-                  </span>
-                </div>
-                <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 10px 0" }}>
-                  Read-only infrastructure uptime telemetry. Production mitigation actions require DEVOPS or ADMIN role clearance.
-                </p>
-                <div style={{ padding: "10px", borderRadius: "6px", backgroundColor: "#ffffff", border: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ fontSize: "13px", fontWeight: "600", color: "#0f172a" }}>Central API Gateway Latency</div>
-                  <span style={{ fontSize: "12px", color: "#059669", fontWeight: "700", padding: "2px 6px", borderRadius: "4px", backgroundColor: "#d1fae5" }}>38ms (Healthy)</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <button onClick={handleLogout} style={{ padding: "10px 16px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
-            Logout (End SSO Session)
-          </button>
-        </div>
-      ) : (
-        <div>
-          <div style={{ marginBottom: "20px", padding: "16px", borderRadius: "8px", backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0", textAlign: "center" }}>
-            <h2 style={{ fontSize: "15px", fontWeight: "700", color: "#065f46", margin: "0 0 6px 0" }}>Enterprise Single Sign-On (SSO)</h2>
-            <p style={{ fontSize: "13px", color: "#047857", margin: "0 0 16px 0" }}>
-              Sign in with your organization email via Sentinel Security with multi-factor verification.
-            </p>
-            <a
-              href={`${portalUrl}/login?client_id=devops_incident&redirect_uri=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "")}&app_name=DevOps%20Incident%20Center`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "10px",
-                width: "100%",
-                padding: "12px 16px",
-                backgroundColor: "#090d16",
-                color: "#ffffff",
-                border: "1px solid #0891b2",
-                borderRadius: "6px",
-                textDecoration: "none",
-                fontWeight: "600",
-                fontSize: "13px",
-                letterSpacing: "0.2px",
-                boxSizing: "border-box"
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-              <span>Sign in with Enterprise SSO</span>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "28px" }}>
+            <a href={buildSsoLoginUrl()} className="btn btn-primary" style={{ padding: "11px 18px" }}>
+              Sign in with Sentinel SSO
+            </a>
+            <a href="#capabilities" className="btn btn-outline" style={{ padding: "11px 18px" }}>
+              Explore Capabilities
             </a>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", margin: "18px 0" }}>
-            <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }}></div>
-            <span style={{ margin: "0 10px", fontSize: "11px", fontWeight: "600", color: "#94a3b8" }}>OR DIRECT CREDENTIALS</span>
-            <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }}></div>
+          <div className="two-col-grid" style={{ gap: "12px" }}>
+            <div className="stat-card">
+              <div className="stat-label">Gateway Telemetry</div>
+              <div className="stat-value" style={{ fontSize: "16px", color: "#059669" }}>
+                38ms (Healthy)
+              </div>
+              <div className="stat-sub">ap-southeast-2 cluster online</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Access Control</div>
+              <div className="stat-value" style={{ fontSize: "16px" }}>
+                Role-Based RBAC
+              </div>
+              <div className="stat-sub">DEVOPS / ADMIN vs Observer Telemetry</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sign In Card */}
+        <div className="card" id="signin">
+          <div
+            className="card-accent"
+            style={{ padding: "16px", borderRadius: "10px", textAlign: "center", marginBottom: "18px" }}
+          >
+            <h2 style={{ fontSize: "15px", fontWeight: 700, color: "var(--accent-dark)", margin: "0 0 6px" }}>
+              Enterprise Single Sign-On (SSO)
+            </h2>
+            <p style={{ fontSize: "13px", color: "#047857", margin: "0 0 14px" }}>
+              Sign in with your organization email via Sentinel Security with multi-factor verification.
+            </p>
+            <a href={buildSsoLoginUrl()} className="btn-sso">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#22d3ee"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span>Sign in with Sentinel Security</span>
+            </a>
           </div>
 
-          <form onSubmit={handleLogin}>
-            <h2 style={{ fontSize: "15px", marginBottom: "12px", color: "#334155" }}>Direct API Sign In</h2>
+          <div style={{ display: "flex", alignItems: "center", margin: "16px 0" }}>
+            <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }} />
+            <span style={{ margin: "0 10px", fontSize: "11px", fontWeight: 700, color: "#94a3b8" }}>
+              OR DIRECT CREDENTIALS
+            </span>
+            <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }} />
+          </div>
+
+          <form onSubmit={handleDirectLogin}>
+            <h3 style={{ fontSize: "15px", margin: "0 0 12px", color: "#334155" }}>Direct API Sign In</h3>
             <div style={{ marginBottom: "12px" }}>
-              <label style={{ display: "block", fontSize: "13px", marginBottom: "4px", fontWeight: "500", color: "#374151" }}>Corporate Email:</label>
+              <label className="form-label" htmlFor="devops-email">
+                Corporate Email:
+              </label>
               <input
+                id="devops-email"
                 type="email"
+                className="form-input"
+                placeholder="engineer@nexusops.io"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                style={{ width: "100%", padding: "9px 12px", borderRadius: "6px", border: "1px solid #d1d5db", boxSizing: "border-box", fontSize: "14px" }}
               />
             </div>
             <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "13px", marginBottom: "4px", fontWeight: "500", color: "#374151" }}>Password:</label>
+              <label className="form-label" htmlFor="devops-password">
+                Password:
+              </label>
               <input
+                id="devops-password"
                 type="password"
+                className="form-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                style={{ width: "100%", padding: "9px 12px", borderRadius: "6px", border: "1px solid #d1d5db", boxSizing: "border-box", fontSize: "14px" }}
               />
             </div>
             <button
               type="submit"
-              disabled={loading}
-              style={{ width: "100%", padding: "11px", backgroundColor: "#059669", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
+              disabled={submitting}
+              className="btn btn-primary"
+              style={{ width: "100%", padding: "11px" }}
             >
-              {loading ? "Authenticating..." : "Login to DevOps Incident Command"}
+              {submitting ? "Forwarding to Sentinel..." : "Login to DevOps Incident Command"}
             </button>
           </form>
         </div>
-      )}
+      </section>
 
-      <footer style={{ marginTop: "24px", paddingTop: "12px", borderTop: "1px solid #e5e7eb", fontSize: "12px", color: "#9ca3af", textAlign: "center" }}>
-        Secured by Sentinel Zero-Trust Identity Federation
-      </footer>
+      {/* Capabilities Section */}
+      <section id="capabilities">
+        <div style={{ marginBottom: "16px" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 6px" }}>
+            Portal Capabilities
+          </h2>
+          <p style={{ margin: 0, fontSize: "14px", color: "var(--text-muted)" }}>
+            Available site reliability and incident remediation modules after authenticating via Sentinel SSO.
+          </p>
+        </div>
+
+        <div className="three-col-grid">
+          <div className="card">
+            <span className="badge badge-accent" style={{ marginBottom: "10px" }}>
+              Dashboard
+            </span>
+            <h3 style={{ fontSize: "16px", margin: "0 0 8px" }}>Operations Overview</h3>
+            <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
+              Inspect cluster latency, active incident counts, and your engineer clearance level at a glance.
+            </p>
+          </div>
+          <div className="card">
+            <span className="badge badge-accent" style={{ marginBottom: "10px" }}>
+              Incidents &amp; Telemetry
+            </span>
+            <h3 style={{ fontSize: "16px", margin: "0 0 8px" }}>Failover &amp; Uptime Board</h3>
+            <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
+              DEVOPS/ADMIN engineers drain pools and scale HPA pods; observers monitor real-time service telemetry.
+            </p>
+          </div>
+          <div className="card">
+            <span className="badge badge-accent" style={{ marginBottom: "10px" }}>
+              Cross-App SSO
+            </span>
+            <h3 style={{ fontSize: "16px", margin: "0 0 8px" }}>Unified Enterprise Session</h3>
+            <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
+              Switch directly to Acme HR or FinTech Payroll from the navigation bar using your active SSO token.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
