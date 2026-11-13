@@ -208,11 +208,11 @@ export default function HomePage() {
           </div>
           <div className="card">
             <span className="badge badge-accent" style={{ marginBottom: "10px" }}>
-              Cross-App SSO
+              Profile &amp; Session
             </span>
-            <h3 style={{ fontSize: "16px", margin: "0 0 8px" }}>Unified Enterprise Session</h3>
+            <h3 style={{ fontSize: "16px", margin: "0 0 8px" }}>Verified Identity Claims</h3>
             <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
-              Switch seamlessly between FinTech Payroll, Acme HR, and Nexus Ops from the top navigation bar.
+              Inspect your federated account ID, treasury role clearance, MFA status, and active session controls.
             </p>
           </div>
         </div>

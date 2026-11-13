@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuthResponse, getSentinelPortalUrl, validateSsoSession } from "../lib/api";
 import { APP_CONFIG } from "../lib/appConfig";
@@ -17,7 +17,6 @@ interface AuthContextValue {
   isSsoHandoff: boolean;
   user: AuthResponse | null;
   ssoToken: string | null;
-  portalUrl: string;
   origin: string;
   notice: AuthNotice | null;
   clearNotice: () => void;
@@ -39,21 +38,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [origin, setOrigin] = useState(APP_CONFIG.defaultOrigin);
   const [notice, setNotice] = useState<AuthNotice | null>(null);
 
+  // Preserve extracted query params across React Strict Mode double-effects
+  const initialQueryRef = useRef<{
+    userId: string | null;
+    token: string | null;
+    mode: string | null;
+    parsed: boolean;
+  }>({ userId: null, token: null, mode: null, parsed: false });
+
   useEffect(() => {
     setPortalUrl(getSentinelPortalUrl());
     if (typeof window !== "undefined" && window.location.origin) {
       setOrigin(window.location.origin);
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const queryUserId = urlParams.get("ssoUserId") || urlParams.get("userId");
-    const queryToken = urlParams.get("ssoToken");
-    const mode = urlParams.get("mode");
+    if (!initialQueryRef.current.parsed) {
+      const urlParams = new URLSearchParams(window.location.search);
+      initialQueryRef.current = {
+        userId: urlParams.get("ssoUserId") || urlParams.get("userId"),
+        token: urlParams.get("ssoToken"),
+        mode: urlParams.get("mode"),
+        parsed: true,
+      };
+      if (initialQueryRef.current.userId || initialQueryRef.current.token) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
+    const { userId: queryUserId, token: queryToken, mode } = initialQueryRef.current;
     const hasQuerySso = Boolean(queryUserId || queryToken);
 
     if (hasQuerySso) {
       setIsSsoHandoff(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     if (mode === "login" && !hasQuerySso) {
@@ -68,21 +84,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const targetUserId = queryUserId || localStorage.getItem("sentinel_sso_userId");
     const targetToken = queryToken || localStorage.getItem("sentinel_sso_token") || undefined;
 
-    if (!targetUserId) {
+    if (!targetUserId && !targetToken) {
       setAuthStatus("unauthenticated");
       return;
     }
 
     let cancelled = false;
 
-    validateSsoSession(Number(targetUserId), targetToken)
+    validateSsoSession(targetUserId ? Number(targetUserId) : undefined, targetToken)
       .then((res) => {
         if (cancelled) return;
         if (res.success) {
           setUser(res);
+          const resolvedUserId = res.userId ?? (targetUserId ? Number(targetUserId) : undefined);
           const resolvedToken = targetToken || res.ssoToken || null;
           setSsoToken(resolvedToken);
-          localStorage.setItem("sentinel_sso_userId", String(targetUserId));
+          if (resolvedUserId) {
+            localStorage.setItem("sentinel_sso_userId", String(resolvedUserId));
+          }
           if (resolvedToken) {
             localStorage.setItem("sentinel_sso_token", resolvedToken);
           }
@@ -169,7 +188,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isSsoHandoff,
         user,
         ssoToken,
-        portalUrl,
         origin,
         notice,
         clearNotice,
