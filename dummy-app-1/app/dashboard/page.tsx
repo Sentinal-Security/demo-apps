@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "../../components/AuthProvider";
 
 export default function DashboardPage() {
-  const { user, portalUrl } = useAuth();
+  const { user } = useAuth();
   if (!user) return null;
 
   const isPrivileged = user.role === "HR" || user.role === "ADMIN";
@@ -91,20 +91,12 @@ export default function DashboardPage() {
         <div className="card">
           <h2 style={{ fontSize: "17px", margin: "0 0 8px" }}>Identity &amp; Session Governance</h2>
           <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: "0 0 16px", lineHeight: 1.55 }}>
-            Inspect your federated Sentinel SSO profile claims, check multi-factor status, or manage active sessions in Sentinel IAM.
+            Inspect your federated Sentinel SSO profile claims, check multi-factor verification status, or end your session.
           </p>
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <Link href="/profile" className="btn btn-outline">
               Session Details
             </Link>
-            <a
-              href={`${portalUrl}/dashboard`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-outline"
-            >
-              Manage IAM Profile ↗
-            </a>
           </div>
         </div>
       </div>

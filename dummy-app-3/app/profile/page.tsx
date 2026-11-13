@@ -4,7 +4,7 @@ import React from "react";
 import { useAuth } from "../../components/AuthProvider";
 
 export default function ProfilePage() {
-  const { user, ssoToken, portalUrl, logout } = useAuth();
+  const { user, ssoToken, logout } = useAuth();
   if (!user) return null;
 
   const maskedToken = ssoToken
@@ -72,14 +72,6 @@ export default function ProfilePage() {
           </div>
 
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            <a
-              href={`${portalUrl}/dashboard`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-secondary"
-            >
-              Manage IAM Profile ↗
-            </a>
             <button type="button" onClick={logout} className="btn btn-danger">
               Logout (End SSO Session)
             </button>

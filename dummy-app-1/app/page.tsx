@@ -205,11 +205,11 @@ export default function HomePage() {
           </div>
           <div className="card">
             <span className="badge badge-accent" style={{ marginBottom: "10px" }}>
-              Cross-App SSO
+              Profile &amp; Session
             </span>
-            <h3 style={{ fontSize: "16px", margin: "0 0 8px" }}>Seamless Portal Switching</h3>
+            <h3 style={{ fontSize: "16px", margin: "0 0 8px" }}>Verified Identity Claims</h3>
             <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
-              Jump straight to FinTech Payroll or Nexus Ops from the top navigation bar without re-entering credentials.
+              Inspect your federated employee ID, organization role, MFA verification status, and active session controls.
             </p>
           </div>
         </div>
