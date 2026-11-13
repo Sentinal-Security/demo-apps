@@ -28,6 +28,27 @@ export interface AuthResponse {
   verified?: boolean;
 }
 
+async function parseAuthResponse(res: Response, fallbackMessage: string): Promise<AuthResponse> {
+  try {
+    const json = await res.json();
+    const rawMsg = typeof json?.message === "string" ? json.message : "";
+    const message = res.status >= 500 && (!rawMsg || rawMsg.includes("No static resource"))
+      ? fallbackMessage
+      : (rawMsg || fallbackMessage);
+    return {
+      ...json,
+      message,
+      accessDenied: res.status === 403,
+    };
+  } catch {
+    return {
+      success: false,
+      accessDenied: res.status === 403,
+      message: fallbackMessage,
+    };
+  }
+}
+
 async function postAppAuth(
   path: string,
   payload: Record<string, unknown>,
@@ -39,11 +60,7 @@ async function postAppAuth(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const json = await res.json();
-    return {
-      ...json,
-      accessDenied: res.status === 403,
-    };
+    return await parseAuthResponse(res, fallbackMessage);
   } catch {
     return { success: false, message: fallbackMessage };
   }
@@ -123,17 +140,5 @@ export async function validateSsoSession(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, ssoToken, clientId, redirectUri, appName }),
   });
-  try {
-    const json = await res.json();
-    return {
-      ...json,
-      accessDenied: res.status === 403,
-    };
-  } catch {
-    return {
-      success: false,
-      accessDenied: res.status === 403,
-      message: "Your sign-in session couldn't be verified. Please sign in again.",
-    };
-  }
+  return parseAuthResponse(res, "Your sign-in session couldn't be verified. Please sign in again.");
 }
