@@ -2,7 +2,14 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { AuthResponse, getSentinelPortalUrl, validateSsoSession } from "../lib/api";
+import {
+  AuthResponse,
+  getSentinelPortalUrl,
+  loginAppAccount,
+  logoutAppLocalSession,
+  validateAppLocalSession,
+  validateSsoSession,
+} from "../lib/api";
 import { APP_CONFIG } from "../lib/appConfig";
 
 export type AuthStatus = "checking" | "authenticated" | "unauthenticated";
@@ -23,10 +30,13 @@ interface AuthContextValue {
   setNotice: (notice: AuthNotice | null) => void;
   buildSsoLoginUrl: (email?: string) => string;
   startSsoRedirect: (email?: string) => void;
+  loginDirect: (email: string, password: string) => Promise<AuthResponse>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+const LOCAL_TOKEN_KEY = "app_local_session_token";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -48,9 +58,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setPortalUrl(getSentinelPortalUrl());
-    if (typeof window !== "undefined" && window.location.origin) {
-      setOrigin(window.location.origin);
-    }
+    const currentOrigin =
+      typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : APP_CONFIG.defaultOrigin;
+    setOrigin(currentOrigin);
 
     if (!initialQueryRef.current.parsed) {
       const urlParams = new URLSearchParams(window.location.search);
@@ -70,11 +82,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (hasQuerySso) {
       setIsSsoHandoff(true);
+      localStorage.removeItem(LOCAL_TOKEN_KEY);
     }
 
     if (mode === "login" && !hasQuerySso) {
       localStorage.removeItem("sentinel_sso_userId");
       localStorage.removeItem("sentinel_sso_token");
+      localStorage.removeItem(LOCAL_TOKEN_KEY);
       setUser(null);
       setSsoToken(null);
       setAuthStatus("unauthenticated");
@@ -83,81 +97,99 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const targetUserId = queryUserId || localStorage.getItem("sentinel_sso_userId");
     const targetToken = queryToken || localStorage.getItem("sentinel_sso_token") || undefined;
-
-    if (!targetUserId && !targetToken) {
-      setAuthStatus("unauthenticated");
-      return;
-    }
+    const localToken = !hasQuerySso ? localStorage.getItem(LOCAL_TOKEN_KEY) : null;
 
     let cancelled = false;
-    const currentOrigin =
-      typeof window !== "undefined" && window.location.origin
-        ? window.location.origin
-        : APP_CONFIG.defaultOrigin;
 
-    validateSsoSession(
-      targetUserId ? Number(targetUserId) : undefined,
-      targetToken,
-      APP_CONFIG.clientId,
-      currentOrigin,
-      APP_CONFIG.appNameParam
-    )
-      .then((res) => {
-        if (cancelled) return;
-        if (res.success) {
-          setUser(res);
-          const resolvedUserId = res.userId ?? (targetUserId ? Number(targetUserId) : undefined);
-          const resolvedToken = targetToken || res.ssoToken || null;
-          setSsoToken(resolvedToken);
-          if (resolvedUserId) {
-            localStorage.setItem("sentinel_sso_userId", String(resolvedUserId));
-          }
-          if (resolvedToken) {
-            localStorage.setItem("sentinel_sso_token", resolvedToken);
-          }
-          setAuthStatus("authenticated");
-          if (hasQuerySso) {
-            setNotice({ type: "success", text: "Single Sign-On (SSO) Session Active." });
-            if (window.location.pathname === "/") {
-              router.replace("/dashboard");
+    if (targetUserId || targetToken) {
+      validateSsoSession(
+        targetUserId ? Number(targetUserId) : undefined,
+        targetToken,
+        APP_CONFIG.clientId,
+        currentOrigin,
+        APP_CONFIG.appNameParam
+      )
+        .then((res) => {
+          if (cancelled) return;
+          if (res.success) {
+            setUser({ ...res, authMode: "sso" });
+            const resolvedUserId = res.userId ?? (targetUserId ? Number(targetUserId) : undefined);
+            const resolvedToken = targetToken || res.ssoToken || null;
+            setSsoToken(resolvedToken);
+            if (resolvedUserId) {
+              localStorage.setItem("sentinel_sso_userId", String(resolvedUserId));
+            }
+            if (resolvedToken) {
+              localStorage.setItem("sentinel_sso_token", resolvedToken);
+            }
+            setAuthStatus("authenticated");
+            if (hasQuerySso) {
+              setNotice({ type: "success", text: "Single Sign-On (SSO) Session Active." });
+              if (window.location.pathname === "/") {
+                router.replace("/dashboard");
+              }
+            }
+          } else {
+            localStorage.removeItem("sentinel_sso_userId");
+            localStorage.removeItem("sentinel_sso_token");
+            setUser(null);
+            setSsoToken(null);
+            setAuthStatus("unauthenticated");
+            setIsSsoHandoff(false);
+            if (
+              hasQuerySso ||
+              res.accessDenied ||
+              (res.message &&
+                (res.message.toLowerCase().includes("permission") ||
+                  res.message.toLowerCase().includes("access denied")))
+            ) {
+              setNotice({
+                type: "error",
+                text: res.message || "Your sign-in session couldn't be verified. Please sign in again.",
+              });
             }
           }
-        } else {
+        })
+        .catch(() => {
+          if (cancelled) return;
           localStorage.removeItem("sentinel_sso_userId");
           localStorage.removeItem("sentinel_sso_token");
           setUser(null);
           setSsoToken(null);
           setAuthStatus("unauthenticated");
           setIsSsoHandoff(false);
-          if (
-            hasQuerySso ||
-            res.accessDenied ||
-            (res.message &&
-              (res.message.toLowerCase().includes("permission") ||
-                res.message.toLowerCase().includes("access denied")))
-          ) {
+          if (hasQuerySso) {
             setNotice({
               type: "error",
-              text: res.message || "Your sign-in session couldn't be verified. Please sign in again.",
+              text: "We couldn't connect to the sign-in service right now. Please try again in a moment.",
             });
           }
-        }
-      })
-      .catch(() => {
-        if (cancelled) return;
-        localStorage.removeItem("sentinel_sso_userId");
-        localStorage.removeItem("sentinel_sso_token");
-        setUser(null);
-        setSsoToken(null);
-        setAuthStatus("unauthenticated");
-        setIsSsoHandoff(false);
-        if (hasQuerySso) {
-          setNotice({
-            type: "error",
-            text: "We couldn't connect to the sign-in service right now. Please try again in a moment.",
-          });
-        }
-      });
+        });
+    } else if (localToken) {
+      validateAppLocalSession({ appId: APP_CONFIG.appId, ssoToken: localToken })
+        .then((res) => {
+          if (cancelled) return;
+          if (res.success) {
+            setUser({ ...res, authMode: "local" });
+            setSsoToken(res.ssoToken || localToken);
+            setAuthStatus("authenticated");
+          } else {
+            localStorage.removeItem(LOCAL_TOKEN_KEY);
+            setUser(null);
+            setSsoToken(null);
+            setAuthStatus("unauthenticated");
+          }
+        })
+        .catch(() => {
+          if (cancelled) return;
+          localStorage.removeItem(LOCAL_TOKEN_KEY);
+          setUser(null);
+          setSsoToken(null);
+          setAuthStatus("unauthenticated");
+        });
+    } else {
+      setAuthStatus("unauthenticated");
+    }
 
     return () => {
       cancelled = true;
@@ -187,15 +219,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [buildSsoLoginUrl]
   );
 
+  const loginDirect = useCallback(
+    async (email: string, password: string): Promise<AuthResponse> => {
+      const res = await loginAppAccount({
+        appId: APP_CONFIG.appId,
+        appName: `${APP_CONFIG.brandName} | ${APP_CONFIG.brandPortal}`,
+        email,
+        password,
+      });
+
+      if (res.success && res.ssoToken) {
+        localStorage.removeItem("sentinel_sso_userId");
+        localStorage.removeItem("sentinel_sso_token");
+        localStorage.setItem(LOCAL_TOKEN_KEY, res.ssoToken);
+        setUser({ ...res, authMode: "local" });
+        setSsoToken(res.ssoToken);
+        setIsSsoHandoff(false);
+        setAuthStatus("authenticated");
+        setNotice({ type: "success", text: `Signed in to ${APP_CONFIG.brandPortal}.` });
+        router.replace("/dashboard");
+      }
+
+      return res;
+    },
+    [router]
+  );
+
   const logout = useCallback(() => {
+    const activeToken = ssoToken || localStorage.getItem(LOCAL_TOKEN_KEY);
+    if (user?.authMode === "local" && activeToken) {
+      logoutAppLocalSession({ appId: APP_CONFIG.appId, ssoToken: activeToken }).catch(() => {});
+    }
     localStorage.removeItem("sentinel_sso_userId");
     localStorage.removeItem("sentinel_sso_token");
+    localStorage.removeItem(LOCAL_TOKEN_KEY);
     setUser(null);
     setSsoToken(null);
     setAuthStatus("unauthenticated");
     setNotice({ type: "info", text: `Logged out from ${APP_CONFIG.brandPortal}.` });
     router.replace("/");
-  }, [router]);
+  }, [router, ssoToken, user?.authMode]);
 
   const clearNotice = useCallback(() => setNotice(null), []);
 
@@ -212,6 +275,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setNotice,
         buildSsoLoginUrl,
         startSsoRedirect,
+        loginDirect,
         logout,
       }}
     >

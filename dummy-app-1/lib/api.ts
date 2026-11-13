@@ -23,6 +23,79 @@ export interface AuthResponse {
   mfaEnabled?: boolean;
   mfaRequired?: boolean;
   accessDenied?: boolean;
+  authMode?: "sso" | "local";
+  requiresVerification?: boolean;
+  verified?: boolean;
+}
+
+async function postAppAuth(
+  path: string,
+  payload: Record<string, unknown>,
+  fallbackMessage: string
+): Promise<AuthResponse> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/app-auth/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    return {
+      ...json,
+      accessDenied: res.status === 403,
+    };
+  } catch {
+    return { success: false, message: fallbackMessage };
+  }
+}
+
+export async function registerAppAccount(data: {
+  appId: string;
+  appName: string;
+  fullName: string;
+  email: string;
+  password: string;
+}): Promise<AuthResponse> {
+  return postAppAuth("register", data, "Unable to complete registration. Please try again.");
+}
+
+export async function verifyAppRegistration(data: {
+  appId: string;
+  email: string;
+  code: string;
+}): Promise<AuthResponse> {
+  return postAppAuth("verify-registration", data, "Unable to verify code. Please try again.");
+}
+
+export async function resendAppVerificationCode(data: {
+  appId: string;
+  appName: string;
+  email: string;
+}): Promise<AuthResponse> {
+  return postAppAuth("resend-code", data, "Unable to resend verification code. Please try again.");
+}
+
+export async function loginAppAccount(data: {
+  appId: string;
+  appName: string;
+  email: string;
+  password: string;
+}): Promise<AuthResponse> {
+  return postAppAuth("login", data, "Unable to sign in right now. Please try again.");
+}
+
+export async function validateAppLocalSession(data: {
+  appId: string;
+  ssoToken: string;
+}): Promise<AuthResponse> {
+  return postAppAuth("validate", data, "Your sign-in session could not be verified. Please sign in again.");
+}
+
+export async function logoutAppLocalSession(data: {
+  appId: string;
+  ssoToken: string;
+}): Promise<AuthResponse> {
+  return postAppAuth("logout", data, "Signed out.");
 }
 
 export async function loginToCentralApi(data: { email: string; password: string }): Promise<AuthResponse> {

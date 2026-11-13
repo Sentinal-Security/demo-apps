@@ -1,16 +1,35 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../components/AuthProvider";
 import { SsoVerifyingScreen } from "../components/SsoVerifyingScreen";
 
 export default function HomePage() {
   const router = useRouter();
-  const { authStatus, buildSsoLoginUrl, startSsoRedirect, setNotice } = useAuth();
+  const { authStatus, buildSsoLoginUrl, loginDirect, setNotice } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const verifiedParam = params.get("verified");
+    const emailParam = params.get("email");
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+    if (verifiedParam === "1") {
+      setNotice({
+        type: "success",
+        text: "Your email is verified. Sign in below with your credentials to access Acme HR Portal.",
+      });
+    }
+  }, [setNotice]);
 
   useEffect(() => {
     if (authStatus === "authenticated") {
@@ -27,16 +46,17 @@ export default function HomePage() {
     );
   }
 
-  const handleDirectLogin = (e: React.FormEvent) => {
+  const handleDirectLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setNotice({
-      type: "info",
-      text: "Forwarding to Sentinel Security Identity Gateway for credential authorization...",
-    });
-    setTimeout(() => {
-      startSsoRedirect(email);
-    }, 300);
+    setLoginError(null);
+    setNeedsVerification(false);
+    const res = await loginDirect(email, password);
+    setSubmitting(false);
+    if (!res.success) {
+      setLoginError(res.message || "Invalid email or password.");
+      setNeedsVerification(Boolean(res.requiresVerification));
+    }
   };
 
   return (
@@ -72,7 +92,10 @@ export default function HomePage() {
           </p>
 
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "28px" }}>
-            <a href={buildSsoLoginUrl()} className="btn btn-primary" style={{ padding: "11px 18px" }}>
+            <Link href="/register" className="btn btn-primary" style={{ padding: "11px 18px" }}>
+              Create an Account
+            </Link>
+            <a href={buildSsoLoginUrl()} className="btn btn-outline" style={{ padding: "11px 18px" }}>
               Sign in with Sentinel SSO
             </a>
             <a href="#capabilities" className="btn btn-outline" style={{ padding: "11px 18px" }}>
@@ -127,22 +150,54 @@ export default function HomePage() {
           <div style={{ display: "flex", alignItems: "center", margin: "16px 0" }}>
             <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
             <span style={{ margin: "0 10px", fontSize: "11px", fontWeight: 700, color: "#94a3b8" }}>
-              OR DIRECT CREDENTIALS
+              OR SIGN IN DIRECTLY
             </span>
             <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
           </div>
 
           <form onSubmit={handleDirectLogin}>
-            <h3 style={{ fontSize: "15px", margin: "0 0 12px", color: "#334155" }}>Direct API Sign In</h3>
+            <h3 style={{ fontSize: "15px", margin: "0 0 4px", color: "#334155" }}>
+              Acme HR Account Sign In
+            </h3>
+            <p style={{ fontSize: "12.5px", color: "var(--text-muted)", margin: "0 0 12px" }}>
+              Use an account created directly on Acme HR Portal (no Sentinel Security account required).
+            </p>
+
+            {loginError && (
+              <div
+                style={{
+                  backgroundColor: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  color: "#991b1b",
+                  borderRadius: "8px",
+                  padding: "10px 12px",
+                  fontSize: "13px",
+                  marginBottom: "12px",
+                }}
+              >
+                <div>{loginError}</div>
+                {needsVerification && (
+                  <div style={{ marginTop: "6px" }}>
+                    <Link
+                      href={`/register?verify=1${email ? `&email=${encodeURIComponent(email)}` : ""}`}
+                      style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline" }}
+                    >
+                      Verify your email &rarr;
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ marginBottom: "12px" }}>
               <label className="form-label" htmlFor="acme-email">
-                Corporate Email:
+                Email Address:
               </label>
               <input
                 id="acme-email"
                 type="email"
                 className="form-input"
-                placeholder="name@acmecorp.com"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -167,9 +222,25 @@ export default function HomePage() {
               className="btn btn-primary"
               style={{ width: "100%", padding: "11px" }}
             >
-              {submitting ? "Forwarding to Sentinel..." : "Login to Acme HR Portal"}
+              {submitting ? "Signing in..." : "Sign In to Acme HR Portal"}
             </button>
           </form>
+
+          <div
+            style={{
+              marginTop: "14px",
+              paddingTop: "14px",
+              borderTop: "1px solid var(--border)",
+              textAlign: "center",
+              fontSize: "13px",
+              color: "var(--text-secondary)",
+            }}
+          >
+            New to Acme HR Portal?{" "}
+            <Link href="/register" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
+              Create an Account
+            </Link>
+          </div>
         </div>
       </section>
 

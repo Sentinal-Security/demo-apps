@@ -25,14 +25,17 @@ export default function DashboardPage() {
       >
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-            <span className="badge badge-success">SSO Session Active</span>
+            <span className="badge badge-success">
+              {user.authMode === "local" ? "Direct Account Active" : "SSO Session Active"}
+            </span>
             <span className="badge badge-accent">ROLE: {user.role || "USER"}</span>
           </div>
           <h1 style={{ margin: "0 0 4px", fontSize: "24px", fontWeight: 800 }}>
             Welcome back, {user.fullName || user.email}
           </h1>
           <p style={{ margin: 0, fontSize: "14px", color: "var(--text-secondary)" }}>
-            Acme Corp Global HR Portal — {user.company || "Enterprise Directory"}
+            Acme Corp Global HR Portal —{" "}
+            {user.company || (user.authMode === "local" ? "Independent Account" : "Enterprise Directory")}
           </p>
         </div>
 
