@@ -57,6 +57,9 @@ export function Navbar() {
               <a href="/#signin" className="nav-link">
                 Sign In
               </a>
+              <Link href="/register" className={`nav-link ${pathname === "/register" ? "nav-link-active" : ""}`}>
+                Create Account
+              </Link>
             </>
           )}
         </nav>
@@ -136,7 +139,7 @@ export function Navbar() {
           </>
         ) : (
           <>
-            <Link href="/" className="nav-link">
+            <Link href="/" className="nav-link" onClick={() => setMobileOpen(false)}>
               Home
             </Link>
             <a href="/#capabilities" className="nav-link" onClick={() => setMobileOpen(false)}>
@@ -145,6 +148,9 @@ export function Navbar() {
             <a href="/#signin" className="nav-link" onClick={() => setMobileOpen(false)}>
               Sign In
             </a>
+            <Link href="/register" className="nav-link" onClick={() => setMobileOpen(false)}>
+              Create Account
+            </Link>
           </>
         )}
 

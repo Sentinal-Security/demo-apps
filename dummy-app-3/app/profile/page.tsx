@@ -15,10 +15,12 @@ export default function ProfilePage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <div>
         <h1 style={{ margin: "0 0 6px", fontSize: "24px", fontWeight: 800 }}>
-          Engineer Profile &amp; SSO Session
+          {user.authMode === "local" ? "Engineer Profile & Account Session" : "Engineer Profile & SSO Session"}
         </h1>
         <p style={{ margin: 0, fontSize: "14px", color: "var(--text-muted)" }}>
-          Identity claims validated via Sentinel Zero-Trust Identity Federation.
+          {user.authMode === "local"
+            ? "Account verified and managed directly on Nexus Ops."
+            : "Identity claims validated via Sentinel Zero-Trust Identity Federation."}
         </p>
       </div>
 
@@ -55,10 +57,13 @@ export default function ProfilePage() {
         </div>
 
         <div className="card">
-          <h2 style={{ fontSize: "17px", margin: "0 0 14px" }}>SSO Session Controls</h2>
+          <h2 style={{ fontSize: "17px", margin: "0 0 14px" }}>
+            {user.authMode === "local" ? "Session Controls" : "SSO Session Controls"}
+          </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px", marginBottom: "20px" }}>
             <div>
-              <strong>Identity Provider:</strong> Sentinel Security Gateway
+              <strong>{user.authMode === "local" ? "Account Type:" : "Identity Provider:"}</strong>{" "}
+              {user.authMode === "local" ? "Direct Application Account" : "Sentinel Security Gateway"}
             </div>
             <div>
               <strong>Active Token:</strong>{" "}
@@ -73,7 +78,7 @@ export default function ProfilePage() {
 
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button type="button" onClick={logout} className="btn btn-danger">
-              Logout (End SSO Session)
+              {user.authMode === "local" ? "Logout" : "Logout (End SSO Session)"}
             </button>
           </div>
         </div>
