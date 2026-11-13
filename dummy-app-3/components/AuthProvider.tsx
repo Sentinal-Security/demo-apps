@@ -90,8 +90,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     let cancelled = false;
+    const currentOrigin =
+      typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : APP_CONFIG.defaultOrigin;
 
-    validateSsoSession(targetUserId ? Number(targetUserId) : undefined, targetToken)
+    validateSsoSession(
+      targetUserId ? Number(targetUserId) : undefined,
+      targetToken,
+      APP_CONFIG.clientId,
+      currentOrigin,
+      APP_CONFIG.appNameParam
+    )
       .then((res) => {
         if (cancelled) return;
         if (res.success) {
@@ -118,7 +128,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setSsoToken(null);
           setAuthStatus("unauthenticated");
-          if (hasQuerySso) {
+          setIsSsoHandoff(false);
+          if (hasQuerySso || (res.message && res.message.toLowerCase().includes("access denied"))) {
             setNotice({
               type: "error",
               text: res.message || "Unable to verify SSO session. Please sign in again.",
@@ -133,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setSsoToken(null);
         setAuthStatus("unauthenticated");
+        setIsSsoHandoff(false);
         if (hasQuerySso) {
           setNotice({
             type: "error",
