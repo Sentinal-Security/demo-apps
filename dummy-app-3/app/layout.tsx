@@ -1,4 +1,7 @@
 import React from "react";
+import "./globals.css";
+import { AuthProvider } from "../components/AuthProvider";
+import { AppShell } from "../components/AppShell";
 
 export const metadata = {
   title: "Nexus Ops | Incident Command Center",
@@ -12,8 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "sans-serif", backgroundColor: "#ecfdf5", color: "#111827" }}>
-        {children}
+      <body>
+        <AuthProvider>
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
       </body>
     </html>
   );
