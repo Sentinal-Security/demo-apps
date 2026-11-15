@@ -72,9 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         mode: urlParams.get("mode"),
         parsed: true,
       };
-      if (initialQueryRef.current.userId || initialQueryRef.current.token) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
     }
 
     const { userId: queryUserId, token: queryToken, mode } = initialQueryRef.current;
@@ -96,14 +93,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const targetUserId = queryUserId || localStorage.getItem("sentinel_sso_userId");
+    const parsedTargetUserId = targetUserId ? Number(targetUserId) : undefined;
+    const safeTargetUserId =
+      parsedTargetUserId !== undefined && Number.isFinite(parsedTargetUserId) && parsedTargetUserId > 0
+        ? parsedTargetUserId
+        : undefined;
     const targetToken = queryToken || localStorage.getItem("sentinel_sso_token") || undefined;
     const localToken = !hasQuerySso ? localStorage.getItem(LOCAL_TOKEN_KEY) : null;
 
     let cancelled = false;
 
-    if (targetUserId || targetToken) {
+    if (safeTargetUserId || targetToken) {
       validateSsoSession(
-        targetUserId ? Number(targetUserId) : undefined,
+        safeTargetUserId,
         targetToken,
         APP_CONFIG.clientId,
         currentOrigin,
@@ -111,9 +113,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       )
         .then((res) => {
           if (cancelled) return;
+          if (hasQuerySso) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
           if (res.success) {
             setUser({ ...res, authMode: "sso" });
-            const resolvedUserId = res.userId ?? (targetUserId ? Number(targetUserId) : undefined);
+            const resolvedUserId = res.userId ?? safeTargetUserId;
             const resolvedToken = targetToken || res.ssoToken || null;
             setSsoToken(resolvedToken);
             if (resolvedUserId) {
@@ -134,8 +139,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.removeItem("sentinel_sso_token");
             setUser(null);
             setSsoToken(null);
-            setAuthStatus("unauthenticated");
             setIsSsoHandoff(false);
+            if (localToken) {
+              validateAppLocalSession({ appId: APP_CONFIG.appId, ssoToken: localToken })
+                .then((localRes) => {
+                  if (cancelled) return;
+                  if (localRes.success) {
+                    setUser({ ...localRes, authMode: "local" });
+                    setSsoToken(localToken);
+                    setAuthStatus("authenticated");
+                  } else {
+                    localStorage.removeItem(LOCAL_TOKEN_KEY);
+                    setAuthStatus("unauthenticated");
+                  }
+                })
+                .catch(() => {
+                  if (!cancelled) setAuthStatus("unauthenticated");
+                });
+              return;
+            }
+            setAuthStatus("unauthenticated");
             if (
               hasQuerySso ||
               res.accessDenied ||
