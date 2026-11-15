@@ -1,4 +1,5 @@
-export const API_BASE_URL = "https://backend-pi68.onrender.com";
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://backend-pi68.onrender.com";
 
 export function getSentinelPortalUrl(): string {
   if (process.env.NEXT_PUBLIC_SENTINEL_PORTAL_URL) {
@@ -113,19 +114,6 @@ export async function logoutAppLocalSession(data: {
   ssoToken: string;
 }): Promise<AuthResponse> {
   return postAppAuth("logout", data, "Signed out.");
-}
-
-export async function loginToCentralApi(data: { email: string; password: string }): Promise<AuthResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  try {
-    return await res.json();
-  } catch {
-    return { success: false, message: "Unable to parse login response." };
-  }
 }
 
 export async function validateSsoSession(
