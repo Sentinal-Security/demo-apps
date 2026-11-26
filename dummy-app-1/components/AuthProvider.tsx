@@ -285,6 +285,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearNotice = useCallback(() => setNotice(null), []);
 
+  // Auto-logout after 30 minutes of inactivity
+  useEffect(() => {
+    if (authStatus !== "authenticated") return;
+
+    const INACTIVITY_MS = 30 * 60 * 1000;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        logout();
+        setNotice({
+          type: "info",
+          text: "Session expired after 30 minutes of inactivity. Please sign in again via Sentinel Security.",
+        });
+      }, INACTIVITY_MS);
+    };
+
+    const events = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"];
+    events.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
+    resetTimer();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      events.forEach((ev) => window.removeEventListener(ev, resetTimer));
+    };
+  }, [authStatus, logout]);
+
   return (
     <AuthContext.Provider
       value={{
