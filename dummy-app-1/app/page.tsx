@@ -123,12 +123,12 @@ export default function HomePage() {
 
         {/* Sign In Card */}
         <div className="card" id="signin">
-          <div className="card-accent" style={{ padding: "16px", borderRadius: "10px", textAlign: "center", marginBottom: "18px" }}>
-            <h2 style={{ fontSize: "15px", fontWeight: 700, color: "var(--accent-dark)", margin: "0 0 6px" }}>
+          <div className="card-accent" style={{ padding: "20px", borderRadius: "10px", textAlign: "center" }}>
+            <h2 style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent-dark)", margin: "0 0 8px" }}>
               Enterprise Single Sign-On (SSO)
             </h2>
-            <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: "0 0 14px" }}>
-              Sign in with your organization email via Sentinel Security with multi-factor verification.
+            <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: "0 0 16px" }}>
+              Authentication is governed centrally by Sentinel Security with multi-factor verification and 30-minute inactivity protection.
             </p>
             <a href={buildSsoLoginUrl()} className="btn-sso">
               <svg
@@ -145,101 +145,6 @@ export default function HomePage() {
               </svg>
               <span>Sign in with Sentinel Security</span>
             </a>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", margin: "16px 0" }}>
-            <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
-            <span style={{ margin: "0 10px", fontSize: "11px", fontWeight: 700, color: "#94a3b8" }}>
-              OR SIGN IN DIRECTLY
-            </span>
-            <div style={{ flex: 1, height: "1px", backgroundColor: "var(--border)" }} />
-          </div>
-
-          <form onSubmit={handleDirectLogin}>
-            <h3 style={{ fontSize: "15px", margin: "0 0 4px", color: "#334155" }}>
-              Acme HR Account Sign In
-            </h3>
-            <p style={{ fontSize: "12.5px", color: "var(--text-muted)", margin: "0 0 12px" }}>
-              Use an account created directly on Acme HR Portal (no Sentinel Security account required).
-            </p>
-
-            {loginError && (
-              <div
-                style={{
-                  backgroundColor: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  color: "#991b1b",
-                  borderRadius: "8px",
-                  padding: "10px 12px",
-                  fontSize: "13px",
-                  marginBottom: "12px",
-                }}
-              >
-                <div>{loginError}</div>
-                {needsVerification && (
-                  <div style={{ marginTop: "6px" }}>
-                    <Link
-                      href={`/register?verify=1${email ? `&email=${encodeURIComponent(email)}` : ""}`}
-                      style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline" }}
-                    >
-                      Verify your email &rarr;
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div style={{ marginBottom: "12px" }}>
-              <label className="form-label" htmlFor="acme-email">
-                Email Address:
-              </label>
-              <input
-                id="acme-email"
-                type="email"
-                className="form-input"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div style={{ marginBottom: "16px" }}>
-              <label className="form-label" htmlFor="acme-password">
-                Password:
-              </label>
-              <input
-                id="acme-password"
-                type="password"
-                className="form-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="btn btn-primary"
-              style={{ width: "100%", padding: "11px" }}
-            >
-              {submitting ? "Signing in..." : "Sign In to Acme HR Portal"}
-            </button>
-          </form>
-
-          <div
-            style={{
-              marginTop: "14px",
-              paddingTop: "14px",
-              borderTop: "1px solid var(--border)",
-              textAlign: "center",
-              fontSize: "13px",
-              color: "var(--text-secondary)",
-            }}
-          >
-            New to Acme HR Portal?{" "}
-            <Link href="/register" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
-              Create an Account
-            </Link>
           </div>
         </div>
       </section>
